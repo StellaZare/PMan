@@ -6,7 +6,7 @@ int main(){
 
     for (int i = 0; i < reps; i++){
         //printf("rep %d\n", i);
-        sleep(1);
+        sleep(3);
     }
 
     printf("Background process finished.\n");

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -8,6 +9,41 @@
 #include <readline/history.h>
 
 #define MAXCMD 100 //Max words in input command
+
+typedef struct Process{
+    pid_t pid;
+    char* identifer;
+    struct Process* next;
+} Process;
+
+typedef struct {
+    Process* head;
+} LinkedList;
+
+/* Adds the specified process to the LinkedList */
+void addProcessFront(LinkedList* L, pid_t pid, char* identifier){
+    Process* toAdd = malloc(sizeof(Process));
+    toAdd->pid = pid;
+    toAdd->identifer = identifier;
+    toAdd->next = L->head;
+    L->head = toAdd;
+}
+
+/* Prints the contents of LinkedList. If empty prints empty message. */
+void printProcesses(LinkedList* L){
+    Process* current = L->head;
+    if (current == NULL){
+        printf("No background processes\n");
+        return;
+    }
+    int count = 0;
+    while(current != NULL){
+        printf("%d: %s\n", current->pid, current->identifer);
+        current = current->next;
+        count++;
+    }
+    printf("Total background jobs: %d\n", count);
+}
 
 /* Prints elements of char* array given the length - for testing */
 void printList(int length, char* list[length]){
@@ -50,23 +86,34 @@ int parseInput(char* input, char** parsedCmd) {
     return parsedIdx;
 }
 
-void executeCmd(int length, char** parsedCmd){
+void executeCmd(int length, char** parsedCmd, LinkedList* processes){
     if(strcmp((*parsedCmd), "bg") == 0){
-        char* args[] = { parsedCmd[1], NULL };
-        execvp(args[0], args);
+        pid_t pid = fork();
+        if(pid > 0){
+            addProcessFront(processes, getpid(), parsedCmd[1]);
+        }
+        if(pid == 0){
+            
+            char* args[] = { parsedCmd[1], NULL };
+            execvp(args[0], args);
+            exit(0);
+        }
     }
     else if(strcmp((*parsedCmd), "bglist") == 0){
-
+        printProcesses(processes);
     }
-    else if(strcmp((*parsedCmd), "exit") == 0){
-        printf("Exit()\n");
+    else if(strcmp((*parsedCmd), "bgkill") == 0){
+        pid_t pid = (pid_t)atoi(parsedCmd[2]);
+        kill(pid, SIGTERM);
     }else{
         printf("Error: (%s) unrecognized command\n", *parsedCmd);
     }
 }
 
 int main(){
-    printDirectory();
+    LinkedList processes;
+    processes.head = NULL;
+
     int run = 1;
     char* input;
     char* parsedCmd[MAXCMD];
@@ -88,7 +135,8 @@ int main(){
         }
         else if (pid == 0){
             //inside child process
-            executeCmd(inputlength, &parsedCmd[0]);
+            executeCmd(inputlength, &parsedCmd[0], &processes);
+            exit(0);
         }
         else{
             //inside parent process
