@@ -88,12 +88,9 @@ int parseInput(char* input, char** parsedCmd) {
 
 void executeCmd(int length, char** parsedCmd, LinkedList* processes){
     if(strcmp((*parsedCmd), "bg") == 0){
+        addProcessFront(processes, getpid(), parsedCmd[1]);
         pid_t pid = fork();
-        if(pid > 0){
-            addProcessFront(processes, getpid(), parsedCmd[1]);
-        }
         if(pid == 0){
-            
             char* args[] = { parsedCmd[1], NULL };
             execvp(args[0], args);
             exit(0);
@@ -108,6 +105,7 @@ void executeCmd(int length, char** parsedCmd, LinkedList* processes){
     }else{
         printf("Error: (%s) unrecognized command\n", *parsedCmd);
     }
+    exit(0);
 }
 
 int main(){
