@@ -12,7 +12,7 @@
 
 typedef struct Process{
     pid_t pid;
-    char* identifer;
+    char name[100];
     struct Process* next;
 } Process;
 
@@ -21,10 +21,10 @@ typedef struct {
 } LinkedList;
 
 /* Adds the specified process to the LinkedList */
-void addProcessFront(LinkedList* L, pid_t pid, char* identifier){
+void addProcessFront(LinkedList* L, pid_t pid, char* namePtr){
     Process* toAdd = malloc(sizeof(Process));
     toAdd->pid = pid;
-    toAdd->identifer = identifier;
+    strcpy(toAdd->name, strcat(namePtr, "\0"));
     toAdd->next = L->head;
     L->head = toAdd;
 }
@@ -54,7 +54,7 @@ void printActiveProcesses(LinkedList* L){
     }
     int count = 0;
     while(current != NULL){
-        printf("%d: %s\n", current->pid, current->identifer);
+        printf("%d: %s\n", current->pid, current->name);
         current = current->next;
         count++;
     }
@@ -68,7 +68,7 @@ void updateActiveProcesses(LinkedList* L){
 
     while(current != NULL){
         //get the status of the current process
-        printf("At process %s\n", current->identifer);
+        printf("At process %s\n", current->name);
         int status;
         pid_t result = waitpid(current->pid, &status, WNOHANG);
         
@@ -76,7 +76,7 @@ void updateActiveProcesses(LinkedList* L){
             printf("Error in waitpid() call\n");
         }
         else if(result != 0){
-            //printf("Remove process %s\n", current->identifer);
+            //printf("Remove process %s\n", current->name);
             removeProcess(prev, current, L);
         }
         prev = current;
@@ -121,7 +121,6 @@ int parseInput(char* input, char** parsedCmd) {
         strcpy(parsedCmd[parsedIdx++], token);
         token = strtok(NULL, " ");
     }
-
     return parsedIdx;
 }
 
@@ -133,7 +132,6 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
             execvp(args[0], args);
         }
         else if(pid > 0){
-            printf("Adding process: %s\n", parsedCmd[1]);
             addProcessFront(activeProcesses, pid, parsedCmd[1]);
         }
     }
