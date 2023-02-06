@@ -1,4 +1,4 @@
 # Ignore executables
-*.exe
-*.out
-*.bin
+PMan
+background
+*.dSYM/
