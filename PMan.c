@@ -68,7 +68,6 @@ void updateActiveProcesses(LinkedList* L){
 
     while(current != NULL){
         //get the status of the current process
-        printf("At process %s\n", current->name);
         int status;
         pid_t result = waitpid(current->pid, &status, WNOHANG);
         
@@ -76,7 +75,6 @@ void updateActiveProcesses(LinkedList* L){
             printf("Error in waitpid() call\n");
         }
         else if(result != 0){
-            printf("Remove process %s\n", current->name);
             removeProcess(prev, current, L);
         }
         prev = current;
@@ -142,9 +140,17 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
     else if(strcmp((*parsedCmd), "bglist") == 0){
         printActiveProcesses(activeProcesses);
     }
-    else if(strcmp((*parsedCmd), "bgkill") == 0){
-        pid_t pid = (pid_t)atoi(parsedCmd[2]);
-        kill(pid, SIGTERM);
+    else if(strcmp((*parsedCmd), "bgkill") == 0){  
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        kill(pid, SIGKILL);
+    }
+    else if(strcmp((*parsedCmd), "bgstop") == 0){
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        kill(pid, SIGSTOP);
+    }
+    else if(strcmp((*parsedCmd), "bgstart") == 0){
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        kill(pid, SIGCONT);
     }else{
         printf("Error: (%s) unrecognized command\n", *parsedCmd);
     }
@@ -172,7 +178,8 @@ int main(){
         }
         
         updateActiveProcesses(&activeProcesses);
-
+        
+        //printList(inputlength, parsedCmd);
         executeCmd(inputlength, &parsedCmd[0], &activeProcesses);
 
         freeParsed(inputlength, parsedCmd);
