@@ -76,7 +76,7 @@ void updateActiveProcesses(LinkedList* L){
             printf("Error in waitpid() call\n");
         }
         else if(result != 0){
-            //printf("Remove process %s\n", current->name);
+            printf("Remove process %s\n", current->name);
             removeProcess(prev, current, L);
         }
         prev = current;
@@ -129,7 +129,11 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
         pid_t pid = fork();
         if(pid == 0){
             char* args[] = { parsedCmd[1], NULL };
-            execvp(args[0], args);
+            int result = execvp(args[0], args);
+            if (result == -1){
+                printf("(%s) not found\n", parsedCmd[1]);
+                exit(1);
+            }
         }
         else if(pid > 0){
             addProcessFront(activeProcesses, pid, parsedCmd[1]);
@@ -155,8 +159,6 @@ int main(){
     char* parsedCmd[MAXCMD];
 
     while(run){
-        printActiveProcesses(&activeProcesses);
-
         input = readline("PMan: > ");
 
         if (strlen(input) == 0)
