@@ -12,7 +12,7 @@
 
 typedef struct Process{
     pid_t pid;
-    char* identifer;
+    char name[100];
     struct Process* next;
 } Process;
 
@@ -21,28 +21,65 @@ typedef struct {
 } LinkedList;
 
 /* Adds the specified process to the LinkedList */
-void addProcessFront(LinkedList* L, pid_t pid, char* identifier){
+void addProcessFront(LinkedList* L, pid_t pid, char* namePtr){
     Process* toAdd = malloc(sizeof(Process));
     toAdd->pid = pid;
-    toAdd->identifer = identifier;
+    strcpy(toAdd->name, strcat(namePtr, "\0"));
     toAdd->next = L->head;
     L->head = toAdd;
 }
 
-/* Prints the contents of LinkedList. If empty prints empty message. */
-void printProcesses(LinkedList* L){
+/* Removes a process from the activeProcesses list */
+void removeProcess(Process* prev, Process* toRemove, LinkedList* L){
+    if(toRemove == L->head){
+        //remove first element
+        L->head = toRemove->next;
+    }
+    else if(toRemove->next == NULL){
+        //remove last element
+        prev->next = NULL;
+    }
+    else{
+        prev->next = toRemove->next;
+    }
+    free(toRemove);
+}
+
+/* Prints the contents of activeProcesses list */
+void printActiveProcesses(LinkedList* L){
     Process* current = L->head;
     if (current == NULL){
-        printf("No background processes\n");
+        printf("No background processes.\n");
         return;
     }
     int count = 0;
     while(current != NULL){
-        printf("%d: %s\n", current->pid, current->identifer);
+        printf("%d: %s\n", current->pid, current->name);
         current = current->next;
         count++;
     }
     printf("Total background jobs: %d\n", count);
+}
+
+/* Updates activeProcesses list using waitpid() */
+void updateActiveProcesses(LinkedList* L){
+    Process* current = L->head;
+    Process* prev = NULL;
+
+    while(current != NULL){
+        //get the status of the current process
+        int status;
+        pid_t result = waitpid(current->pid, &status, WNOHANG);
+        
+        if(result == -1){
+            printf("Error in waitpid() call\n");
+        }
+        else if(result != 0){
+            removeProcess(prev, current, L);
+        }
+        prev = current;
+        current = current->next;
+    }
 }
 
 /* Prints elements of char* array given the length - for testing */
@@ -82,35 +119,46 @@ int parseInput(char* input, char** parsedCmd) {
         strcpy(parsedCmd[parsedIdx++], token);
         token = strtok(NULL, " ");
     }
-
     return parsedIdx;
 }
 
-void executeCmd(int length, char** parsedCmd, LinkedList* processes){
+void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
     if(strcmp((*parsedCmd), "bg") == 0){
-        addProcessFront(processes, getpid(), parsedCmd[1]);
         pid_t pid = fork();
         if(pid == 0){
             char* args[] = { parsedCmd[1], NULL };
-            execvp(args[0], args);
-            exit(0);
+            int result = execvp(args[0], args);
+            if (result == -1){
+                printf("(%s) not found\n", parsedCmd[1]);
+                exit(1);
+            }
+        }
+        else if(pid > 0){
+            addProcessFront(activeProcesses, pid, parsedCmd[1]);
         }
     }
     else if(strcmp((*parsedCmd), "bglist") == 0){
-        printProcesses(processes);
+        printActiveProcesses(activeProcesses);
     }
-    else if(strcmp((*parsedCmd), "bgkill") == 0){
-        pid_t pid = (pid_t)atoi(parsedCmd[2]);
-        kill(pid, SIGTERM);
+    else if(strcmp((*parsedCmd), "bgkill") == 0){  
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        kill(pid, SIGKILL);
+    }
+    else if(strcmp((*parsedCmd), "bgstop") == 0){
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        kill(pid, SIGSTOP);
+    }
+    else if(strcmp((*parsedCmd), "bgstart") == 0){
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        kill(pid, SIGCONT);
     }else{
         printf("Error: (%s) unrecognized command\n", *parsedCmd);
     }
-    exit(0);
 }
 
 int main(){
-    LinkedList processes;
-    processes.head = NULL;
+    LinkedList activeProcesses;
+    activeProcesses.head = NULL;
 
     int run = 1;
     char* input;
@@ -118,30 +166,24 @@ int main(){
 
     while(run){
         input = readline("PMan: > ");
+
         if (strlen(input) == 0)
             continue;
         add_history(input);
 
         int inputlength = parseInput(strcat(input, "\0"), &parsedCmd[0]);
-        //printList(inputlength, parsedCmd);
 
-        pid_t pid = fork();
-        //execution of child starts here
-
-        if(pid < 0){
-            printf("Error in fork() call\n");
-        }
-        else if (pid == 0){
-            //inside child process
-            executeCmd(inputlength, &parsedCmd[0], &processes);
+        if(strcmp(input, "exit") == 0){
             exit(0);
         }
-        else{
-            //inside parent process
-            wait(NULL);
-            free(input);
-            freeParsed(inputlength, parsedCmd);
-        }
+        
+        updateActiveProcesses(&activeProcesses);
+        
+        //printList(inputlength, parsedCmd);
+        executeCmd(inputlength, &parsedCmd[0], &activeProcesses);
+
+        freeParsed(inputlength, parsedCmd);
+        free(input);
         
     }
     return 0;
