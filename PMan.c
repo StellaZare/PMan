@@ -129,7 +129,7 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
             char* args[] = { parsedCmd[1], NULL };
             int result = execvp(args[0], args);
             if (result == -1){
-                printf("(%s) not found\n", parsedCmd[1]);
+                printf("Error: Process [%s] does not exist.\n", parsedCmd[1]);
                 exit(1);
             }
         }
