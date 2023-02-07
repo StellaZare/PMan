@@ -75,6 +75,7 @@ void updateActiveProcesses(LinkedList* L){
             printf("Error in waitpid()\n");
         }
         if(result != 0){
+            printf("[%d] %s has terminated\n", current->pid, current->name);
             removeProcess(prev, current, L);
         }
         prev = current;
@@ -85,17 +86,13 @@ void updateActiveProcesses(LinkedList* L){
 /* Prints elements of char* array given the length - for testing */
 void printList(int length, char* list[length]){
     for (int i = 0; i < length; i++)
-    {
         printf("%d. %s\n", i, list[i]);
-    }  
 }
 
 /* Frees the memory used by parsedCmd array */
 void freeParsed(int length, char* list[length]){
     for (int i = 0; i < length; i++)
-    {
-        free(list[i]);
-    }  
+        free(list[i]); 
 }
 
 /* Prints current working directory to stdout - for testing */
@@ -105,14 +102,12 @@ void printDirectory() {
         printf("Current Directory: %s\n", directory);
     }else{
         printf("Error in getcwd() call\n");
-    }
-   
+    } 
 }
 
 /* Parse input: creates a array for the input */
 int parseInput(char* input, char** parsedCmd) {
     int parsedIdx = 0;
-
     char* token = strtok(input, " ");
     while (token != NULL) {
         parsedCmd[parsedIdx] = malloc(strlen(token) + 1);
@@ -186,6 +181,7 @@ int main(){
 
     while(run){
         input = readline("PMan: > ");
+        updateActiveProcesses(&activeProcesses);
 
         if (strlen(input) == 0)
             continue;
@@ -199,9 +195,7 @@ int main(){
         if(strcmp(input, "exit") == 0){
             exit(0);
         }
-        
-        updateActiveProcesses(&activeProcesses);
-        
+
         executeCmd(inputlength, &parsedCmd[0], &activeProcesses);
 
         freeParsed(inputlength, parsedCmd);
