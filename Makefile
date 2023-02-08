@@ -6,7 +6,7 @@ SOURCES = PMan.c
 all: $(TARGET)
 
 $(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES)
+	$(CC) $(SOURCES) -o $(TARGET) $(CFLAGS)
 
 run: $(TARGET)
 	./$(TARGET)

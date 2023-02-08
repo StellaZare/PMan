@@ -3,7 +3,6 @@
 
 int main(){
     
-    sleep(30);
-    printf("\n--> background process terminated");
+    sleep(60*5);
     return 0;
 }
