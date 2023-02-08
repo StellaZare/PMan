@@ -114,10 +114,25 @@ void createArgs(int length, char** parsedCmd, char* args[]){
     args[length-1] = NULL;
 }
 
+int checkCommand(int length){
+    if(length < 2){
+        printf("Error: Incomplete command\n");
+        return -1;
+    }
+    return 0;
+}
+
+void executeStat(pid_t pid){
+    return;
+}
+
 void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
     int killResult = 0;
 
     if(strcmp((*parsedCmd), "bg") == 0){
+        if (checkCommand(length) == -1){
+            return;
+        }
         pid_t pid = fork();
         if(pid == 0){
             char* args[length];
@@ -141,7 +156,10 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
     else if(strcmp((*parsedCmd), "bglist") == 0){
         printActiveProcesses(activeProcesses);
     }
-    else if(strcmp((*parsedCmd), "bgkill") == 0){  
+    else if(strcmp((*parsedCmd), "bgkill") == 0){ 
+        if (checkCommand(length) == -1){
+            return;
+        } 
         pid_t pid = (pid_t)atoi(parsedCmd[1]);
         killResult = kill(pid, SIGTERM);
         if(killResult == 0)
@@ -149,21 +167,33 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
           
     }
     else if(strcmp((*parsedCmd), "bgstop") == 0){
+        if (checkCommand(length) == -1){
+            return;
+        }
         pid_t pid = (pid_t)atoi(parsedCmd[1]);
         killResult = kill(pid, SIGSTOP);
         if(killResult == 0)
             printf("Process [%d] stopped\n", pid);
     }
     else if(strcmp((*parsedCmd), "bgstart") == 0){
+        if (checkCommand(length) == -1){
+            return;
+        }
         pid_t pid = (pid_t)atoi(parsedCmd[1]);
         killResult = kill(pid, SIGCONT);
         if(killResult == 0)
             printf("Process [%d] started\n", pid);
 
-    }else {
-        printf("Error: Unrecognized command %s.\n", *parsedCmd);
+    }
+    else if(strcmp((*parsedCmd), "pstat") == 0){
+        if (checkCommand(length) == -1){
+            return;
+        }
+        pid_t pid = (pid_t)atoi(parsedCmd[1]);
+        executeStat(pid);
+    }else{
+        printf("Error: Unrecognized command %s\n", *parsedCmd);
     }  
-
     if(killResult == -1)
         printf("Error: Process [%s] does not exist\n", parsedCmd[1]);
 
