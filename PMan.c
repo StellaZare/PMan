@@ -116,7 +116,7 @@ void createArgs(int length, char** parsedCmd, char* args[]){
     args[length-1] = NULL;
 }
 
-/* checks the input command legth used for error handling */
+/* checks the input command legth used for error handling `*/
 int checkCommand(int length){
     if(length < 2){
         printf("Error: Incomplete command\n");
