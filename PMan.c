@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/prctl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -135,9 +136,12 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
         }
         pid_t pid = fork();
         if(pid == 0){
+            // to terminate child if parent was terminated 
+            prctl(PR_SET_PDEATHSIG, SIGTERM);
+            // parse input array
             char* args[length];
             createArgs(length, parsedCmd, &args[0]);
-
+            
             int execResult = execvp(args[0], args);
             if (execResult == -1){
                 printf("Error: (%s) not found\n", parsedCmd[1]);
@@ -145,12 +149,12 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
             }
         }
         else if(pid > 0){
-            usleep(100000);
+            usleep(200000);
             int status;
             pid_t execResult = waitpid(pid, &status, WNOHANG);
-            if (execResult == 0) 
+            if (execResult == 0){
                 addProcessFront(activeProcesses, pid, parsedCmd[1]);
-        
+            }
         }
     }
     else if(strcmp((*parsedCmd), "bglist") == 0){
@@ -224,6 +228,5 @@ int main(){
         freeParsed(inputlength, parsedCmd);
         free(input);  
     }
-
     return 0;
 }
