@@ -9,6 +9,13 @@ This assignment uses system calls to execute basic shell commands.
 4. bgstop (pid) - to stop the execution of the specified process
 5. bgstart (pid) - to resume the execution of the specifed process
 
+### make
+* create the executable 
+
+### make run
+* to update executable (if changed)
+* to run ./PMan
+
 ### bg (executable)(optional parameters)
 * creates a child process to execute the given program
 * adds the pid of the child process to activeProcesses Linkedlist
@@ -36,7 +43,7 @@ This assignment uses system calls to execute basic shell commands.
 * prints error message if pid is invalid
 
 ### exit
-* exit command will exit PMan.c program
+* exits PMan.c program
 
 ## Functions
 
