@@ -108,6 +108,7 @@ int parseInput(char* input, char** parsedCmd) {
     return parsedIdx;
 }
 
+/* creates the  args array used in call to exec */
 void createArgs(int length, char** parsedCmd, char* args[]){
     for(int i = 1; i < length; i++){
         args[i-1] = parsedCmd[i];
@@ -115,6 +116,7 @@ void createArgs(int length, char** parsedCmd, char* args[]){
     args[length-1] = NULL;
 }
 
+/* checks the input command legth used for error handling */
 int checkCommand(int length){
     if(length < 2){
         printf("Error: Incomplete command\n");
