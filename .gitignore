@@ -1,4 +1,5 @@
 # Ignore executables
 PMan
 background
+background2
 *.dSYM/
