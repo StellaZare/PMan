@@ -126,7 +126,70 @@ int checkCommand(int length){
 }
 
 void executeStat(pid_t pid){
-    return;
+    int arraySize = 100;
+    char buffer[arraySize];
+
+    // comms
+    char comm[arraySize];
+    snprintf(comm, arraySize, "/proc/%d/comm", pid);
+    FILE* commFile = fopen(comm, "r");
+    if(commFile == NULL){
+        printf("Error: fopen() call failed");
+        return;
+    }
+    fgets(comm, arraySize, commFile);
+    fclose(commFile);
+
+    // state
+    char state;
+    char status[arraySize];
+    snprintf(status, arraySize, "/proc/%d/status", pid);
+    FILE* statusFile = fopen(status, "r");
+    if (statusFile == NULL){
+        printf("Error: fopen() call failed");
+        return;
+    }
+    while(fgets(buffer, arraySize, statusFile)){
+        if(strncmp(buffer, "State:", 6) == 0){
+            state = buffer[7];
+        }
+        if (strncmp(buffer, "VmRSS:", 6) == 0) {
+            
+        }
+    }
+    fclose(statusFile);
+
+    // utime 
+    char utime[arraySize], stime[arraySize];
+    char stat[arraySize];
+    snprintf(stat, arraySize, "/proc/%d/stat", pid);
+    FILE* statFile = fopen(stat, "r");
+    if(statFile == NULL){
+        printf("Error: fopen() call failed");
+        return;
+    }
+    fgets(buffer, arraySize, statFile);
+    char* token = strtok(buffer, " ");
+    int count = 1;
+    while(token && count < 16){
+        if(count == 14){
+            strcpy(utime, token);
+        }
+        if(count == 15){
+            strcpy(stime, token);
+        }
+        token = strtok(NULL, " ");
+        count++;
+    }
+    fclose(statFile);
+
+    // printf satements
+    printf("PID\t %d\n", pid);
+    printf("comm\t %s", comm);
+    printf("state\t %c\n", state);
+    printf("utime\t %s\n", utime);
+    printf("stime\t %s\n", stime);
+
 }
 
 void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
