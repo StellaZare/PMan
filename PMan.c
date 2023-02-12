@@ -279,7 +279,12 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
             return;
         }
         pid_t pid = (pid_t)atoi(parsedCmd[1]);
-        executeStat(pid);
+        int status;
+        pid_t result = waitpid(pid, &status, WNOHANG);
+        if(result != -1)
+            executeStat(pid);
+        else
+            printf("Error: Process %d does not exist\n", pid);
     }else{
         printf("Error: Unrecognized command %s\n", *parsedCmd);
     }  
