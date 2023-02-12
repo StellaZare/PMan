@@ -42,6 +42,11 @@ This assignment uses system calls to execute basic shell commands.
 * prints confirmation message if successful
 * prints error message if pid is invalid
 
+### pstat (pid)
+* prints the program information given a pid
+* prints: comm, state, utime, stime, rss, # of voluntary context switches and # of nonvoluntary context switches
+
+
 ### exit
 * exits PMan.c program
 

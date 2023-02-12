@@ -126,7 +126,90 @@ int checkCommand(int length){
 }
 
 void executeStat(pid_t pid){
-    return;
+    int arraySize = 100;
+    char buffer[arraySize];
+
+    // comms
+    char comm[arraySize];
+    snprintf(comm, arraySize, "/proc/%d/comm", pid);
+    FILE* commFile = fopen(comm, "r");
+    if(commFile == NULL){
+        printf("Error: fopen() call failed");
+        return;
+    }
+    fgets(comm, arraySize, commFile);
+    fclose(commFile);
+
+    // state
+    char state;
+    char rss[arraySize];
+    char voluntary[arraySize];
+    char nonvoluntary[arraySize];
+    char status[arraySize];
+    snprintf(status, arraySize, "/proc/%d/status", pid);
+    FILE* statusFile = fopen(status, "r");
+    if (statusFile == NULL){
+        printf("Error: fopen() call failed");
+        return;
+    }
+    while(fgets(buffer, arraySize, statusFile)){
+        if(strncmp(buffer, "State:", 6) == 0){
+            state = buffer[7];
+        }
+        if (strncmp(buffer, "VmRSS:", 6) == 0) {
+            char* token = strtok(buffer, "\t");
+            token = strtok(NULL, " ");
+            strcpy(rss, token);
+        }
+        if (strncmp(buffer, "voluntary_ctxt_switches:", 24) == 0) {
+            char* token = strtok(buffer, "\t");
+            token = strtok(NULL, " ");
+            strcpy(voluntary, token);
+        }
+        if (strncmp(buffer, "nonvoluntary_ctxt_switches:", 27) == 0) {
+            char* token = strtok(buffer, "\t");
+            token = strtok(NULL, " ");
+            strcpy(nonvoluntary, token);
+        }
+    }
+    fclose(statusFile);
+
+    // utime 
+    char utime[arraySize], stime[arraySize];
+    char stat[arraySize];
+    snprintf(stat, arraySize, "/proc/%d/stat", pid);
+    FILE* statFile = fopen(stat, "r");
+    if(statFile == NULL){
+        printf("Error: fopen() call failed");
+        return;
+    }
+    fgets(buffer, arraySize, statFile);
+    char* token = strtok(buffer, " ");
+    int count = 1;
+    while(token && count < 16){
+        if(count == 14){
+            strcpy(utime, token);
+        }
+        if(count == 15){
+            strcpy(stime, token);
+        }
+        token = strtok(NULL, " ");
+        count++;
+    }
+    fclose(statFile);
+
+    // printf satements
+    printf("-----\n");
+    printf("PID\t %d\n", pid);
+    printf("comm\t %s", comm);
+    printf("state\t %c\n", state);
+    printf("utime\t %s\n", utime);
+    printf("stime\t %s\n", stime);
+    printf("rss\t %s\n", rss);
+    printf("voluntary switch\t %d\n", atoi(voluntary));
+    printf("nonvoluntary switch\t %d\n", atoi(nonvoluntary));
+    printf("-----\n");
+
 }
 
 void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
@@ -196,7 +279,12 @@ void executeCmd(int length, char** parsedCmd, LinkedList* activeProcesses){
             return;
         }
         pid_t pid = (pid_t)atoi(parsedCmd[1]);
-        executeStat(pid);
+        int status;
+        pid_t result = waitpid(pid, &status, WNOHANG);
+        if(result != -1)
+            executeStat(pid);
+        else
+            printf("Error: Process %d does not exist\n", pid);
     }else{
         printf("Error: Unrecognized command %s\n", *parsedCmd);
     }  

@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 int main(){
-    sleep(60*5);
+    while(1);
+    
     return 0;
 }
